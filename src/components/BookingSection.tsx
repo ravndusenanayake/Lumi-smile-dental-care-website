@@ -177,7 +177,7 @@ export default function BookingSection() {
                   <option value="Teeth Cleaning">Teeth Cleaning</option>
                   <option value="Teeth Filling">Teeth Filling</option>
                   <option value="Tooth Extraction">Tooth Extraction</option>
-                  <option value="Root Canal">Root Canal</option>
+                  <option value="Root Canal Treatment">Root Canal Treatment</option>
                   <option value="Braces / Orthodontics">Braces / Orthodontics</option>
                   <option value="Other">Other</option>
                 </select>
