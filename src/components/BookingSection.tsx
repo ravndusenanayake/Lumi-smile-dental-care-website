@@ -10,8 +10,37 @@ export default function BookingSection() {
     patient_name: "",
     phone_number: "",
     appointment_date: "",
+    appointment_time: "",
     reason_for_visit: "",
   });
+
+  const getAvailableTimes = (dateString: string) => {
+    if (!dateString) return [];
+    const date = new Date(dateString);
+    const day = date.getDay();
+    const times: string[] = [];
+    
+    if (day === 0 || day === 6) {
+      // Weekends: 9:00 AM to 8:30 PM
+      for (let h = 9; h <= 20; h++) {
+        const hour12 = h === 12 ? 12 : (h > 12 ? h - 12 : h);
+        const ampm = h >= 12 ? "PM" : "AM";
+        times.push(`${hour12}:00 ${ampm}`);
+        times.push(`${hour12}:30 ${ampm}`);
+      }
+    } else {
+      // Weekdays: 5:00 PM to 8:30 PM
+      for (let h = 17; h <= 20; h++) {
+        const hour12 = h === 12 ? 12 : (h > 12 ? h - 12 : h);
+        const ampm = h >= 12 ? "PM" : "AM";
+        times.push(`${hour12}:00 ${ampm}`);
+        times.push(`${hour12}:30 ${ampm}`);
+      }
+    }
+    return times;
+  };
+
+  const availableTimes = getAvailableTimes(formData.appointment_date);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -31,6 +60,7 @@ export default function BookingSection() {
         patient_name: formData.patient_name,
         phone_number: formData.phone_number,
         appointment_date: formData.appointment_date,
+        appointment_time: formData.appointment_time,
         reason_for_visit: formData.reason_for_visit,
         status: "Pending",
       },
@@ -47,6 +77,7 @@ export default function BookingSection() {
         patient_name: "",
         phone_number: "",
         appointment_date: "",
+        appointment_time: "",
         reason_for_visit: "",
       });
       // Hide success message after 8 seconds
@@ -131,28 +162,28 @@ export default function BookingSection() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label htmlFor="reason_for_visit" className="text-sm font-semibold text-slate-700">Reason for Visit</label>
-                  <select
-                    id="reason_for_visit"
-                    name="reason_for_visit"
-                    required
-                    value={formData.reason_for_visit}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0ea5e9] focus:border-[#0ea5e9] outline-none transition-all bg-white"
-                  >
-                    <option value="" disabled>Select a reason</option>
-                    <option value="General Checkup">General Checkup</option>
-                    <option value="Teeth Cleaning">Teeth Cleaning</option>
-                    <option value="Teeth Filling">Teeth Filling</option>
-                    <option value="Tooth Extraction">Tooth Extraction</option>
-                    <option value="Root Canal">Root Canal</option>
-                    <option value="Braces / Orthodontics">Braces / Orthodontics</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
+              <div className="space-y-2">
+                <label htmlFor="reason_for_visit" className="text-sm font-semibold text-slate-700">Reason for Visit</label>
+                <select
+                  id="reason_for_visit"
+                  name="reason_for_visit"
+                  required
+                  value={formData.reason_for_visit}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0ea5e9] focus:border-[#0ea5e9] outline-none transition-all bg-white"
+                >
+                  <option value="" disabled>Select a reason</option>
+                  <option value="General Checkup">General Checkup</option>
+                  <option value="Teeth Cleaning">Teeth Cleaning</option>
+                  <option value="Teeth Filling">Teeth Filling</option>
+                  <option value="Tooth Extraction">Tooth Extraction</option>
+                  <option value="Root Canal">Root Canal</option>
+                  <option value="Braces / Orthodontics">Braces / Orthodontics</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label htmlFor="appointment_date" className="text-sm font-semibold text-slate-700">Preferred Date</label>
                   <input
@@ -161,10 +192,35 @@ export default function BookingSection() {
                     type="date"
                     required
                     value={formData.appointment_date}
-                    onChange={handleChange}
+                    onChange={(e) => {
+                      handleChange(e);
+                      setFormData(prev => ({ ...prev, appointment_time: "" }));
+                    }}
                     min={new Date().toISOString().split("T")[0]}
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0ea5e9] focus:border-[#0ea5e9] outline-none transition-all text-slate-700"
                   />
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="appointment_time" className="text-sm font-semibold text-slate-700">Preferred Time</label>
+                  <select
+                    id="appointment_time"
+                    name="appointment_time"
+                    required
+                    disabled={!formData.appointment_date}
+                    value={formData.appointment_time}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0ea5e9] focus:border-[#0ea5e9] outline-none transition-all bg-white disabled:opacity-50"
+                  >
+                    <option value="" disabled>
+                      {formData.appointment_date ? "Select a time" : "Select a date first"}
+                    </option>
+                    {availableTimes.map((time) => (
+                      <option key={time} value={time}>
+                        {time}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

@@ -19,9 +19,10 @@ export default function Navbar() {
           <span className="text-xl font-bold text-primary">Lumi Smile</span>
         </Link>
         <nav className="hidden md:flex gap-8">
-          <Link href="#home" className="text-sm font-medium hover:text-primary transition-colors">Home</Link>
-          <Link href="#services" className="text-sm font-medium hover:text-primary transition-colors">Services</Link>
-          <Link href="#contact" className="text-sm font-medium hover:text-primary transition-colors">Contact</Link>
+          <Link href="/" className="text-sm font-medium hover:text-primary transition-colors">Home</Link>
+          <Link href="/about" className="text-sm font-medium hover:text-primary transition-colors">About</Link>
+          <Link href="/#services" className="text-sm font-medium hover:text-primary transition-colors">Services</Link>
+          <Link href="/#contact" className="text-sm font-medium hover:text-primary transition-colors">Contact</Link>
         </nav>
         <Link 
           href="tel:0775277543" 

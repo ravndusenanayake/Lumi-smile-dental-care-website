@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { CheckCircle, Clock, MessageCircle, AlertCircle } from "lucide-react";
+import { CheckCircle, Clock, MessageCircle, AlertCircle, LogOut } from "lucide-react";
 
 interface Appointment {
   id: string | number;
@@ -14,7 +14,15 @@ interface Appointment {
   status: "Pending" | "Accepted" | string;
 }
 
+import { verifyAdminCredentials } from "@/app/actions/auth";
+
 export default function AdminDashboard() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,8 +31,37 @@ export default function AdminDashboard() {
   const [timeInputs, setTimeInputs] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    fetchAppointments();
-  }, []);
+    if (isLoggedIn) {
+      fetchAppointments();
+    }
+  }, [isLoggedIn]);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoggingIn(true);
+    setLoginError("");
+
+    try {
+      const result = await verifyAdminCredentials(username, password);
+      
+      if (result.success) {
+        setIsLoggedIn(true);
+      } else {
+        setLoginError(result.error || "Invalid credentials.");
+      }
+    } catch (err) {
+      setLoginError("An error occurred during login.");
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setUsername("");
+    setPassword("");
+    setLoginError("");
+  };
 
   const fetchAppointments = async () => {
     setLoading(true);
@@ -46,8 +83,10 @@ export default function AdminDashboard() {
     setTimeInputs((prev) => ({ ...prev, [id]: value }));
   };
 
-  const acceptAppointment = async (id: string | number) => {
-    const time = timeInputs[id];
+  const acceptAppointment = async (id: string | number, requestedTime: string | null) => {
+    // Use the explicitly typed time, or fallback to the patient's requested time
+    const time = timeInputs[id] !== undefined ? timeInputs[id] : requestedTime;
+    
     if (!time) {
       alert("Please enter a time.");
       return;
@@ -77,7 +116,6 @@ export default function AdminDashboard() {
     // Strip non-numbers and '+'
     let cleanPhone = phone.replace(/[^0-9+]/g, "");
     if (cleanPhone.startsWith("0")) {
-      // Convert standard domestic 07XXXX to 947XXXX
       cleanPhone = "94" + cleanPhone.substring(1);
     }
     cleanPhone = cleanPhone.replace("+", "");
@@ -87,6 +125,59 @@ export default function AdminDashboard() {
   const getWhatsAppMessage = (time: string) => {
     return encodeURIComponent(`Your appointment has been confirmed for ${time}.`);
   };
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 max-w-md w-full">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-gray-900">Admin Login</h1>
+            <p className="text-gray-500 mt-2 text-sm">Please enter your credentials to continue.</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-6">
+            {loginError && (
+              <div className="bg-red-50 text-red-600 p-4 rounded-xl flex items-center gap-3 text-sm font-medium">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                {loginError}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700">Username</label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0ea5e9] focus:border-[#0ea5e9] outline-none transition-all placeholder:text-slate-400"
+                placeholder="Enter username"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0ea5e9] focus:border-[#0ea5e9] outline-none transition-all placeholder:text-slate-400"
+                placeholder="Enter password"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-[#0ea5e9] hover:bg-[#0284c7] text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-[#0ea5e9]/20"
+            >
+              Log In
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto min-h-screen bg-gray-50/50">
@@ -99,6 +190,13 @@ export default function AdminDashboard() {
             Manage your patient appointments.
           </p>
         </div>
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 transition-colors rounded-lg font-medium text-sm"
+        >
+          <LogOut className="w-4 h-4" />
+          Logout
+        </button>
       </div>
 
       {loading ? (
@@ -129,7 +227,7 @@ export default function AdminDashboard() {
                 {appointments.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={6}
                       className="px-6 py-12 text-center text-gray-500 bg-gray-50/30"
                     >
                       <div className="flex flex-col items-center justify-center">
@@ -171,21 +269,29 @@ export default function AdminDashboard() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {appointment.status === "Pending" ? (
-                          <div className="flex items-center gap-3">
-                            <input
-                              type="time"
-                              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-slate-800 focus:border-slate-800 outline-none transition-shadow text-gray-700"
-                              value={timeInputs[appointment.id] || ""}
-                              onChange={(e) =>
-                                handleTimeChange(appointment.id, e.target.value)
-                              }
-                            />
-                            <button
-                              onClick={() => acceptAppointment(appointment.id)}
-                              className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors shadow-sm"
-                            >
-                              Accept
-                            </button>
+                          <div className="flex flex-col gap-1.5">
+                            {appointment.appointment_time && (
+                              <span className="text-xs text-blue-600 font-semibold">
+                                Requested: {appointment.appointment_time}
+                              </span>
+                            )}
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="text"
+                                placeholder="Time (e.g. 5:30 PM)"
+                                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-slate-800 focus:border-slate-800 outline-none transition-shadow text-gray-700 w-32"
+                                value={timeInputs[appointment.id] !== undefined ? timeInputs[appointment.id] : (appointment.appointment_time || "")}
+                                onChange={(e) =>
+                                  handleTimeChange(appointment.id, e.target.value)
+                                }
+                              />
+                              <button
+                                onClick={() => acceptAppointment(appointment.id, appointment.appointment_time)}
+                                className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors shadow-sm"
+                              >
+                                Accept
+                              </button>
+                            </div>
                           </div>
                         ) : (
                           <div className="flex items-center gap-4">
