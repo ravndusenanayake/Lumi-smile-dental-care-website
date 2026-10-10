@@ -10,6 +10,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Lumi Smile Dental Care | Warakapola",
   description: "Professional Dental Care in Warakapola. Teeth cleaning, extraction, fillings, and braces.",
+  verification: {
+    google: "0HXxp8ILQIJ9M55pugnQA7AVILSzGYJgv4Ewlr_a_OI",
+  },
 };
 
 export default function RootLayout({
